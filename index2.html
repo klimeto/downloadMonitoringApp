@@ -1,0 +1,280 @@
+<!doctype html>
+<html class="no-js" lang="">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="apple-touch-icon" href="icon.png">
+    <!-- Place favicon.ico in the root directory -->
+
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/main.css">
+
+</head>
+<body>
+<!--[if lte IE 9]>
+<p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
+<![endif]-->
+
+<h2>JEODPP Data Availability <input type="date" id="datePicker" min="2015-01-01"></h2>
+
+<div id="downQuicklookAll" class="boxed">
+    <h3>Quicklooks available in JEODPP catalog</h3>
+    <p>Loading ...</p>
+</div>
+<div id="downDataBoxAll" class="boxed">
+    <h3>Data available in JEODPP catalog</h3>
+    <p>Loading ...</p>
+</div>
+<div id="downMDBoxAll" class="boxed">
+    <h3>Data with stats available in JEODPP catalog</h3>
+    <p>Loading ...</p>
+</div>
+<br>
+<br>
+<div id="downQuicklookBox" class="boxed">
+    <h3>Quicklooks available for day</h3>
+    <p>Loading ...</p>
+    <span>Acquisition start date:  </span>
+</div>
+<div id="downDataBox" class="boxed">
+    <h3>Data available for day</h3>
+    <p>Loading ...</p>
+    <span>Acquisition start date:  </span>
+</div>
+<div id="downMDBox" class="boxed">
+    <h3>Data + stats available for day</h3>
+    <p>Loading ...</p>
+    <span>Acquisition start date:  </span>
+</div>
+<br>
+<br>
+<div id="downQuicklookBoxMonth" class="boxed">
+    <h3>Quicklooks available for month</h3>
+    <p>Loading ...</p>
+    <span>Acquisition start date:  </span>
+</div>
+<div id="downDataBoxMonth" class="boxed">
+    <h3>Data available for month</h3>
+    <p>Loading ...</p>
+    <span>Acquisition start date:  </span>
+</div>
+<div id="downMDBoxMonth" class="boxed">
+    <h3>Data + stats available for month</h3>
+    <p>Loading ...</p>
+    <span>Acquisition start date:  </span>
+</div>
+<br>
+<br>
+<div id="downQuicklookBoxYear" class="boxed">
+    <h3>Quicklooks available for year</h3>
+    <p>Loading ...</p>
+    <span>Acquisition start date:  </span>
+</div>
+<div id="downDataBoxYear" class="boxed">
+    <h3>Data available for year</h3>
+    <p>Loading ...</p>
+    <span>Acquisition start date:  </span>
+</div>
+<div id="downMDBoxYear" class="boxed">
+    <h3>Data + stats available for year</h3>
+    <p>Loading ...</p>
+    <span>Acquisition start date: </span>
+</div>
+
+<div id="totalSrsDs" class="boxed">
+    <h3>SRS Datasets available in JEODPP catalog</h3>
+    <p>Loading ...</p>
+</div>
+
+<div id="totalSrsTs" class="boxed">
+    <h3>SRS Tiles available in JEODPP catalog</h3>
+    <p>Loading ...</p>
+</div>
+
+<div id="totalBaseDs" class="boxed">
+    <h3>Base Datasets available in JEODPP catalog</h3>
+    <p>Loading ...</p>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+<script>
+
+    var catalogEndpoint = "https://cidportal.jrc.ec.europa.eu/services/catalogue/dataset?count=1&";
+    var day = '';
+    var urlParams = new URLSearchParams(window.location.search);
+
+    if(urlParams.get('day')){
+        day = urlParams.get('day')
+        $("span:contains('Acquisition start date:  ')").text('Acquisition start date:  ' + day);
+    }
+    else{
+        var d = new Date();
+        var n = d.toISOString();
+        $("span:contains('Acquisition start date:  ')").text('Acquisition start date:  ' + d);
+        day = n.split("T")[0]
+    }
+
+    $(document).ready(function() {
+        function loadData() {
+            var dayString = new Date(day).toDateString();
+            console.log(day);
+            var m = day.slice(0, 7);
+            var y = m.slice(0, 4);
+            // DAILY DATA
+            $('#downMDBox h3').text("Data with stats available for day: " + dayString.split(" ")[0]);
+            var mdTotal = parseInt($('#downMDBox p').text());
+            $('#downMDBox p').text("Loading ...");
+            $.getJSON(catalogEndpoint + 'acquisitionStartTime=' + day + '%&data=true&stats=true', function (data) {
+                console.log(data);
+                var total = data[0].results.total;
+                $('#downMDBox p').attr("align", "center");
+                $('#downMDBox p').text(total);
+                $('#downMDBox p').css("font-size", "50px");
+            })
+            $('#downDataBox h3').text("Data available  for day: " + dayString.split(" ")[0]);
+            var dataTotal = parseInt($('#downDataBox p').text());
+            $('#downDataBox p').text("Loading ...");
+            $.getJSON(catalogEndpoint + 'acquisitionStartTime=' + day + '%&data=true', function (data) {
+                console.log(data);
+                var total = data[0].results.total;
+                $('#downDataBox p').attr("align", "center");
+                $('#downDataBox p').text(total);
+                $('#downDataBox p').css("font-size", "50px");
+            })
+            $('#downQuicklookBox h3').text("Quicklooks available  for day: " + dayString.split(" ")[0]);
+            var quickTotal = parseInt($('#downQuicklookBox p').text());
+            $('#downQuicklookBox p').text("Loading ...");
+            $.getJSON(catalogEndpoint + 'acquisitionStartTime=' + day + '%&quicklooks=true&data=false', function (data) {
+                console.log(data);
+                var total = data[0].results.total;
+                $('#downQuicklookBox p').attr("align", "center");
+                $('#downQuicklookBox p').text(total);
+                $('#downQuicklookBox p').css("font-size", "50px");
+            })
+            // MONTHLY DATA
+            $('#downMDBoxMonth h3').text("Data with stats available for month: " + dayString.split(" ")[1]);
+            $('#downMDBoxMonth p').text("Loading ...");
+            $.getJSON(catalogEndpoint + 'acquisitionStartTime=' + m + '%&data=true&stats=true', function (data) {
+                console.log(data);
+                var total = data[0].results.total;
+                $('#downMDBoxMonth p').attr("align", "center");
+                $('#downMDBoxMonth p').text(total);
+                $('#downMDBoxMonth p').css("font-size", "50px");
+            })
+            $('#downDataBoxMonth h3').text("Data available  for month: " + dayString.split(" ")[1]);
+            $('#downDataBoxMonth p').text("Loading ...");
+            $.getJSON(catalogEndpoint + 'acquisitionStartTime=' + m + '%&data=true', function (data) {
+                console.log(data);
+                var total = data[0].results.total;
+                $('#downDataBoxMonth p').attr("align", "center");
+                $('#downDataBoxMonth p').text(total);
+                $('#downDataBoxMonth p').css("font-size", "50px");
+            })
+            $('#downQuicklookBoxMonth h3').text("Quicklooks available  for month: " + dayString.split(" ")[1]);
+            $('#downQuicklookBoxMonth p').text("Loading ...");
+            $.getJSON(catalogEndpoint + 'acquisitionStartTime=' + m + '%&quicklooks=true&data=false', function (data) {
+                console.log(data);
+                var total = data[0].results.total;
+                $('#downQuicklookBoxMonth p').attr("align", "center");
+                $('#downQuicklookBoxMonth p').text(total);
+                $('#downQuicklookBoxMonth p').css("font-size", "50px");
+            })
+            // YEARLY DATA
+            $('#downMDBoxYear h3').text("Data with stats available for year: " + dayString.split(" ")[3]);
+            $('#downMDBoxYear p').text("Loading ...");
+            $.getJSON(catalogEndpoint + 'acquisitionStartTime=' + y + '%&data=true&stats=true', function (data) {
+                console.log(data);
+                var total = data[0].results.total;
+                $('#downMDBoxYear p').attr("align", "center");
+                $('#downMDBoxYear p').text(total);
+                $('#downMDBoxYear p').css("font-size", "50px");
+            })
+            $('#downDataBoxYear h3').text("Data available for year: " + dayString.split(" ")[3]);
+            $('#downDataBoxYear p').text("Loading ...");
+            $.getJSON(catalogEndpoint + 'acquisitionStartTime=' + y + '%&data=true', function (data) {
+                console.log(data);
+                var total = data[0].results.total;
+                $('#downDataBoxYear p').attr("align", "center");
+                $('#downDataBoxYear p').text(total);
+                $('#downDataBoxYear p').css("font-size", "50px");
+            })
+            $('#downQuicklookBoxYear h3').text("Quicklooks available  for year: " + dayString.split(" ")[3]);
+            $('#downQuicklookBoxYear p').text("Loading ...");
+            $.getJSON(catalogEndpoint + 'acquisitionStartTime=' + y + '%&quicklooks=true&data=false', function (data) {
+                console.log(data);
+                var total = data[0].results.total;
+                $('#downQuicklookBoxYear p').attr("align", "center");
+                $('#downQuicklookBoxYear p').text(total);
+                $('#downQuicklookBoxYear p').css("font-size", "50px");
+            })
+            // TOTAL DATA
+            $.getJSON(catalogEndpoint + 'data=true&stats=true', function (data) {
+                console.log(data);
+                var total = data[0].results.total;
+                $('#downMDBoxAll p').attr("align", "center");
+                $('#downMDBoxAll p').text(total);
+                $('#downMDBoxAll p').css("font-size", "50px");
+            })
+            $.getJSON(catalogEndpoint + 'data=true', function (data) {
+                console.log(data);
+                var total = data[0].results.total;
+                $('#downDataBoxAll p').attr("align", "center");
+                $('#downDataBoxAll p').text(total);
+                $('#downDataBoxAll p').css("font-size", "50px");
+            })
+            $.getJSON(catalogEndpoint + 'quicklooks=true&data=false', function (data) {
+                console.log(data);
+                var total = data[0].results.total;
+                $('#downQuicklookAll p').attr("align", "center");
+                $('#downQuicklookAll p').text(total);
+                $('#downQuicklookAll p').css("font-size", "50px");
+            })
+
+
+            $.getJSON(catalogEndpoint + 'dataType=SRS', function (data) {
+                console.log(data);
+                var total = data[0].results.total;
+                $('#totalSrsDs p').attr("align", "center");
+                $('#totalSrsDs p').text(total);
+                $('#totalSrsDs p').css("font-size", "50px");
+            })
+            $.getJSON(catalogEndpoint + 'dataType=base', function (data) {
+                console.log(data);
+                var total = data[0].results.total;
+                $('#totalBaseDs p').attr("align", "center");
+                $('#totalBaseDs p').text(total);
+                $('#totalBaseDs p').css("font-size", "50px");
+            })
+            $.getJSON(catalogEndpoint.replace("dataset?count=1&","dataset_spec"), function (data) {
+                console.log(data);
+                var total = data[0].results.total;
+                $('#totalSrsTs p').attr("align", "center");
+                $('#totalSrsTs p').text(total);
+                $('#totalSrsTs p').css("font-size", "50px");
+            })
+        }
+
+        $('#datePicker').val(day);
+        $('#datePicker').change(function () {
+            console.log(this.value);
+            day = this.value;
+            console.log(urlParams);
+            urlParams.set('day',day.toString());
+            $("span:contains('Acquisition start date:  ')").text('Acquisition start date:  ' + day);
+            loadData(day);
+        })
+        loadData(day);
+
+    })
+
+
+
+
+</script>
+</body>
+</html>

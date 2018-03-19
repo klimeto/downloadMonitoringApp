@@ -1,0 +1,230 @@
+<!doctype html>
+<html class="no-js" lang="">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>SRS Hubs Performance Monitoring App</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="apple-touch-icon" href="icon.png">
+    <!-- Place favicon.ico in the root directory -->
+
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/main.css">
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+<!--[if lte IE 9]>
+<p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
+<![endif]-->
+
+<!-- Add your site or application content here -->
+<div id="Scihub"></div>
+<div id="Cophub"></div>
+<div id="DevSeed"></div>
+<div id="Jeodpp"></div>
+
+
+<h2>SRS HUBs Response Times monitoring <input type="date" id="datePicker" min="2018-03-01"></h2>
+
+<div id="chartQuicklookDayly" class="boxedChart">
+    <p>Loading quicklook dayly plot ...</p>
+    <span></span>
+</div>
+
+<div id="chartQuicklookOverall" class="boxedChart">
+    <p>Loading quicklook entire period plot ...</p>
+    <span></span>
+</div>
+
+<!--
+<script src="js/vendor/modernizr-3.5.0.min.js"></script>
+
+<script>window.jQuery || document.write('<script src="js/vendor/jquery-3.2.1.min.js"><\/script>')</script>
+<script src="js/plugins.js"></script>
+-->
+<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+<script>
+    $(document).ready(function() {
+        var day = '';
+        var logName = '';
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('day')) {
+            day = urlParams.get('day')
+            $('#datePicker').val(day);
+        }
+        else {
+            var d = new Date();
+            var n = d.toISOString();
+            day = n.split("T")[0]
+        }
+        $('#datePicker').val(day);
+        $('#datePicker').val(day);
+        $('#datePicker').change(function () {
+            //console.log(this.value);
+            day = this.value;
+            $('#chartQuicklookDayly div').remove();
+            $('#chartQuicklookDayly').html("<p>Loading plot for day: " + day + "</p>");
+            makeplot("chartQuicklookDayly");
+            //makeplot("chartMeta");
+        })
+
+        function makeplot(id) {
+            if (id == 'chartQuicklookOverall') {
+                Plotly.d3.csv("http://139.191.71.14/data/logs/md_lib_s2_down_meta_quicklook.csv", function (data) {
+                    processData(data, id)
+                });
+            }
+            else if (id == 'chartQuicklookDayly') {
+                month = day.split('-')
+                logName = 'md_lib_s2_down_meta_quicklook_'+month[0]+month[1]+month[2]+'.csv';
+                //logName = 'md_lib_s2_down_meta_quicklook_20180306.csv'
+                //logName = 'md_lib_s2_down_meta_quicklook.csv'
+                try {
+                    Plotly.d3.csv("http://139.191.71.14/data/logs/" + logName, function (data) {
+                        processData(data, id)
+                    });
+                }
+                catch(err){
+                    alert("FAILED");
+                    $('#chartMeta p').text("Failed loading the plot for input data: " + logName);
+                }
+            }
+            else if (id == 'chartFullZip') {
+                Plotly.d3.csv("http://139.191.71.14/data/logs/md_lib_s2_down_full_product_zip_logs.csv", function (data) {
+                    processData(data, id)
+                });
+            }
+        };
+
+        function processData(allRows, id) {
+
+            allRows.sort(function (a, b) {
+                var dateA = new Date(a.timestamp), dateB = new Date(b.timestamp);
+                return dateA - dateB;
+            });
+
+            //console.log("Number of records in csv file: ", allRows.length);
+            var x = [], y = [], standard_deviation = [];
+            var x1 = [], y1 = [], standard_deviation = [];
+            var x2 = [], y2 = [], standard_deviation = [];
+            //console.log("DATA OBEJCT: ", allRows);
+            for (var i = 0; i < allRows.length; i++) {
+                //row = allRows.sort()[i];
+                row = allRows[i];
+                //console.log("ROW:",[i], " IS: ", row);
+                //console.log("ENDPOINT: ", row['endpoint']);
+                if(row['endpoint'] == 'cophub'){
+                    x1.push(new Date(row['timestamp']));
+                    y1.push(row['respTime']);
+                    lastTimestamp = ("Last Timestamp is: " + x1[(allRows.length) - 1]);
+                }
+                if(row['endpoint'] == 'scihub'){
+                    x2.push(new Date(row['timestamp']));
+                    y2.push(row['respTime']);
+                    lastTimestamp = ("Last Timestamp is: " + x2[(allRows.length) - 1]);
+                }
+                else {
+                    x.push(new Date(row['timestamp']));
+                    y.push(row['respTime']);
+                    lastTimestamp = ("Last Timestamp is: " + x[(allRows.length) - 1]);
+                }
+                /*
+                else{
+                    x.push(row['timestamp']);
+                    y.push(row['respTime']);
+                    lastTimestamp = ("Last Timestamp is: " + x[(allRows.length) - 1]);
+                }
+                */
+            }
+            makePlotly(x, y,x1,y1,x2,y2, id, lastTimestamp);
+        }
+
+        function makePlotly(x, y,x1,y1,x2,y2,id, last) {
+            var plotDiv = document.getElementById("plot");
+            var traces = [{
+                x: x,
+                y: y,
+                type:'line'
+            }];
+            var trace1 = {
+                type: 'line',
+                x: x1,
+                y: y1,
+                name: 'COPHUB'
+            }
+            var trace2 = {
+                type: 'line',
+                x: x2,
+                y: y2,
+                name: 'SCIHUB'
+            }
+            var toPlot = [trace1, trace2];
+            var layout = {
+                title: 'Response times for metadata + quicklooks download routines: ' + id + ' ['+day+']',
+                autosize: true,
+                showlegend: true,
+
+                //height: 400,
+                //width: 600,
+
+                xaxis: {
+                    title: 'DateTime',
+                    type:'date',
+                    autorange:true,
+                    //range: ['2018-02-15', '2018-03-16'],
+                    showgrid: true,
+                    zeroline: true,
+                    showticklabels: true,
+                    tickangle: 45,
+                    tickfont: {
+                        family: 'Old Standard TT, serif',
+                        size: 9,
+                        color: 'black'
+                    },
+                },
+                yaxis: {
+                    title: 'Response time [s]',
+                    showline: false
+                },
+                height: 600
+            };
+
+            if (id == 'chartQuicklookOverall') {
+                $('#chartQuicklookOverall p').remove();
+                Plotly.newPlot(id, toPlot,layout);
+                $('#chartQuicklook span').text(last);
+
+            }
+            else if (id == 'chartQuicklookDayly') {
+                $('#chartQuicklookDayly p').remove();
+                Plotly.newPlot(id, toPlot, layout);
+                $('#chartMeta span').text(last);
+            }
+            else if (id == 'chartFullZip') {
+                $('#chartFullZip p').remove();
+                Plotly.newPlot(id, traces,
+                    {title: 'Response times for full product download scripts - package download time'});
+                $('#chartFullZip span').text(last);
+            }
+        };
+        makeplot("chartQuicklookOverall");
+        makeplot("chartQuicklookDayly");
+        //makeplot("chartFullZip");
+    })
+
+
+</script>
+
+<!-- Google Analytics: change UA-XXXXX-Y to be your site's ID.
+<script>
+    window.ga=function(){ga.q.push(arguments)};ga.q=[];ga.l=+new Date;
+    ga('create','UA-XXXXX-Y','auto');ga('send','pageview')
+</script>
+<script src="https://www.google-analytics.com/analytics.js" async defer></script>
+-->
+</body>
+</html>
